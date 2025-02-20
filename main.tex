@@ -1,0 +1,562 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% --------------------------------------------------------
+% Rho
+% LaTeX Template
+% Version 2.1.1 (01/09/2024)
+%
+% Authors: 
+% Guillermo Jimenez (memo.notess1@gmail.com)
+% Eduardo Gracidas (eduardo.gracidas29@gmail.com)
+% 
+% License:
+% Creative Commons CC BY 4.0    
+% --------------------------------------------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[9pt,a4paper,twoside]{rho-class/rho}
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{array}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{xcolor} 
+
+
+\setbool{rho-abstract}{true} % Set false to hide the abstract
+\setbool{corres-info}{true} % Set false to hide the corresponding author section
+
+
+%----------------------------------------------------------
+% TITLE
+%----------------------------------------------------------
+
+\journalname{Placeholder Name for Journal}
+\title {\hyphenpenalty=10000\exhyphenpenalty=10000 Game-Theoretical Approach Using Integrated Fuzzy-VAE for Devanagari Handwritten Digits Classification}
+
+
+%----------------------------------------------------------
+% AUTHORS AND AFFILIATIONS
+%----------------------------------------------------------
+
+\author[1,$\dagger$]{Aneesh S. Chivukula}
+\author[2]{Taanvi Dande}
+\author[3]{Timothy Zachariah Binesh}
+
+%----------------------------------------------------------
+
+\affil[1]{aneesh.chivukula@hyderabad.bits-pilani.ac.in}
+\affil[2]{f20222007@hyderabad.bits-pilani.ac.in}
+\affil[3]{f20212978@hyderabad.bits-pilani.ac.in}
+
+\affil[$\dagger$]{These authors contributed equally to this project.}
+
+%----------------------------------------------------------
+% DATES
+%----------------------------------------------------------
+
+\dates{This report was submitted on February 13, 2025}
+
+%----------------------------------------------------------
+% FOOTER INFORMATION
+%----------------------------------------------------------
+
+\footinfo{Department of CSIS}
+\institution{BITS Pilani, Hyderabad Campus}
+
+%----------------------------------------------------------
+% ABSTRACT
+%----------------------------------------------------------
+
+\begin{abstract}
+  This paper explores the application of a Fuzzy-VAE model for classifying Devanagari digits, optimized specifically for edge deployment on Qualcomm AI Developer Kit (QIDK) devices. While Variational Autoencoders (VAEs) have shown success in tasks like digit generation on simpler datasets (e.g., MNIST), their application to more complex scripts such as Devanagari requires a nuanced approach to handle uncertainty and the richness of stroke variations, particularly when constrained by edge computing resources. We propose integrating fuzzy logic into the VAE framework to capture the inherent uncertainty in handwritten Devanagari digits while maintaining computational efficiency for edge deployment. By incorporating fuzzy membership functions into the latent space, we enable the model to represent varying degrees of uncertainty, thereby enhancing both the interpretability and robustness of the learned features. The model undergoes adversarial training optimization before being converted and quantized for deployment on QIDK edge devices using the Snapdragon Neural Processing Engine (SNPE). Our implementation demonstrates successful edge deployment while maintaining model accuracy and real-time inference capabilities. The results suggest positive outcomes, with the model showing promising accuracy and explainability on both cloud and edge platforms, demonstrating its ability to generalize across diverse handwriting styles while operating within edge computing constraints. Additionally, the integration of fuzzy logic enhances the flexibility of decision-making, allowing the model to better handle the variability in stroke patterns and to offer more interpretable fuzzy rules for classification. This approach holds the potential to improve the accuracy and interpretability of complex handwritten character recognition tasks while enabling practical deployment in resource-constrained edge environments.
+\end{abstract}
+
+%----------------------------------------------------------
+
+\keywords{Variational Autoencoder (VAE), Fuzzy-VAE, Handwritten Character Recognition (HCR), Devanagari Handwritten Character Dataset (DHCD), Edge Computing, Qualcomm AI Developer Kit (QIDK), Snapdragon Neural Processing Engine (SNPE), Model Quantization, Fuzzy Membership Functions, Edge AI Deployment}
+
+%----------------------------------------------------------
+\lstset{
+  backgroundcolor=\color{white},
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  numbers=none,
+  frame=single,
+}
+
+
+\begin{document}
+	
+    \maketitle
+    \thispagestyle{firststyle}
+    % \tableofcontents
+    \linenumbers
+
+%----------------------------------------------------------
+
+\section{Introduction}
+
+    \rhostart{D}evanagari is one of the world's most widely adopted writing systems, used for languages like Hindi, Marathi, and Sanskrit. The script is composed of 13 vowels and 36 consonants, and due to its left-to-right writing direction and segmental nature, it presents more complexity than English. Handwritten Devanagari characters exhibit significant variations in shape, position, and stroke, making automated recognition a challenging task. Although Convolutional neural networks (CNNs) have made substantial progress in handwritten character recognition (HCR) of simpler scripts like English, complex scripts such as Devanagari require more sophisticated approaches to handle these variations effectively ~\cite{masrat2024}.
+    
+    Variational Autoencoders (VAEs) have proven successful in tasks like digit generation on datasets such as MNIST, where their ability to model data distributions in a low-dimensional latent space facilitates efficient reconstruction and generation of new samples ~\cite{kingma}. However, the application of VAEs to more complex datasets, such as Devanagari digits, poses challenges due to the increased variability and intricate stroke patterns inherent in the script.
+   To address this, we propose investigating a Fuzzy-VAE approach, which integrates fuzzy logic to handle uncertainty and capture the nuanced characteristics of Devanagari digits. Fuzzy logic, inspired by human cognitive processes, can handle the uncertainty and vagueness inherent in handwritten characters by offering more flexible decision-making capabilities. By incorporating fuzzy sets into the latent space of the VAE, we aim to enhance the model's ability to learn a more robust and interpretable representation of Devanagari digits, enabling better generalization across various handwriting styles. ~\cite{zadeh}. Furthermore, we propose applying a game-theoretical framework to optimize the model’s latent space, fostering better agent interaction and adversarial learning dynamics, which can be particularly beneficial for improving generation quality and robustness ~\cite{nash}.
+    
+    \subsection{Motivation}
+    Devanagari digits, unlike the relatively simpler digits in the MNIST dataset, exhibit intricate stroke patterns, varying orientations, and significant handwriting variability. These complexities make cloud-based solutions less viable in real-time applications where low latency and offline functionality are crucial.
+    Edge deployment of a Fuzzy-VAE model specifically designed for Devanagari digits can address these challenges effectively. In scenarios such as mobile banking, e-governance platforms, and educational tools in rural India, real-time digit recognition is required to function without depending on continuous internet connectivity. Deploying the model directly on smartphones, tablets, or low-cost embedded devices enables instant recognition and generation of handwritten Devanagari digits without the need for a network connection, thus reducing reliance on cloud resources, lowering latency, and improving privacy.
+   
+    \subsection{Problem Statement}
+    With the VAE-FNN model as reference ~\cite{zhang}, the goal is to learn the parameters of the fuzzy variational autoencoder that can model the distribution of handwritten Devanagari digits while incorporating fuzziness into the latent space. The objective is to maximize the fuzzy evidence lower bound (ELBO), which consists of the expected log-likelihood of the reconstruction and the Kullback-Leibler divergence between the fuzzy approximate posterior and the prior. 
+    \[ \mathcal{L}(\theta, \phi, x) = \mathbb{E}_{q_{\phi}(z|x)}[\log p_{\theta}(x|z)] - \text{KL}(q_{\phi}(z|x) || p(z)) \]
+
+    where:
+    \begin{itemize}
+        \item \( x \in \mathbb{R}^{m \times n} \) is a handwritten Devanagari digit image,
+        \item \( q_{\phi}(z|x) \) is the fuzzy encoder mapping the input image to a fuzzy latent variable \( z \),
+        \item \( p_{\theta}(x|z) \) is the fuzzy decoder reconstructing the image from \( z \),
+        \item \( z \) is represented as a fuzzy set with membership function \( \mu(z) \),
+        \item \( \mathbb{E}_{q_{\phi}(z|x)}[\log p_{\theta}(x|z)] \) is the expected reconstruction log-likelihood,
+        \item \( \text{KL}(q_{\phi}(z|x) || p(z)) \) is the Kullback-Leibler divergence between the fuzzy approximate posterior and the prior.
+    \end{itemize}
+    
+    \subsection{Overview}
+    The architecture consists of an encoder-decoder structure, where the encoder utilizes four convolutional layers with LeakyReLU activations and a dropout operation to regularize the learning process. The encoder maps the input images into a lower-dimensional latent space, while the latent space incorporates fuzzy membership functions, associating each latent feature with three fuzzy sets: "poor," "average," and "good". This fuzzy representation enables the model to handle uncertainty in handwritten digits, offering more flexible and interpretable feature representations. The decoder reconstructs the input images using deconvolutional layers and a fuzzy logic layer containing nodes for fuzzy intersections and unions, further enhancing interpretability through fuzzy rules. The model also employs a game-theoretical framework for optimizing the latent space, fostering better interaction between agents, and improving adversarial learning dynamics. Finally, the trained model uses fuzzy rules for classification, providing a transparent basis for its decision-making process.
+    
+\begin{table}[h!]
+\centering
+\renewcommand{\arraystretch}{1.5} % Adjusts the row height
+\Large % Makes the text slightly larger
+\resizebox{0.5\textwidth}{!}{%
+\begin{tabular}{|>{\raggedright\arraybackslash}p{3cm}|>{\raggedright\arraybackslash}p{3cm}|>{\raggedright\arraybackslash}p{5cm}|>{\raggedright\arraybackslash}p{3cm}|}
+\hline
+\textbf{Layer} & \textbf{Type} & \textbf{Details} & \textbf{Output Size} \\ \hline
+\hline
+Input Layer & Image & 32x32 grayscale image & 32x32x1 \\ \hline
+Conv Layer 1 & Convolutional & 32 filters, 3x3 kernel, stride 1, padding 'same'; followed by LeakyReLU activation and Dropout (0.1) & 32x32x32 \\ \hline
+Conv Layer 2 & Convolutional & 64 filters, 3x3 kernel, stride 1, padding 'same'; followed by LeakyReLU activation and Dropout (0.1) & 32x32x64 \\ \hline
+Conv Layer 3 & Convolutional & 128 filters, 3x3 kernel, stride 1, padding 'same'; followed by LeakyReLU activation and Dropout (0.1) & 32x32x128 \\ \hline
+Conv Layer 4 & Convolutional & 256 filters, 3x3 kernel, stride 1, padding 'same'; followed by LeakyReLU activation and Dropout (0.1) & 32x32x256 \\ \hline
+Flatten & Flatten & Flatten the output from the final convolutional layer & 1x(32*32*256) \\ \hline
+Latent Space & Fully Connected & Dense layer with 10 and 20 latent variables (as specified for the model) & 10, 20 \\ \hline
+Fuzzy Logic Layer & Fuzzy Layer & 5 fuzzy intersection nodes and 5 fuzzy union nodes, utilizing fuzzy membership functions & 10 (fuzzy features) \\ \hline
+Deconv Layer 1 & Deconvolutional & 128 filters, 3x3 kernel, stride 1, padding 'same'; followed by ReLU activation & 32x32x128 \\ \hline
+Deconv Layer 2 & Deconvolutional & 64 filters, 3x3 kernel, stride 1, padding 'same'; followed by ReLU activation & 32x32x64 \\ \hline
+Deconv Layer 3 & Deconvolutional & 32 filters, 3x3 kernel, stride 1, padding 'same'; followed by ReLU activation & 32x32x32 \\ \hline
+Deconv Layer 4 & Deconvolutional & 1 filter, 3x3 kernel, stride 1, padding 'same'; followed by Sigmoid activation for reconstruction & 32x32x1 \\ \hline
+Output Layer & Image & Final reconstructed image, same size as the input & 32x32x1 \\ \hline
+\end{tabular}
+}
+\caption{Fuzzy-VAE Architecture for Devanagari Digits}
+\end{table}
+
+
+\section{Related Works}
+   Early techniques for recognizing Devanagari digits primarily relied on classical machine learning models, where feature extraction played a central role. Methods such as Support Vector Machines (SVMs), k-Nearest Neighbors (k-NN), and Decision Trees were applied to handcrafted features like zoning, chain codes, and moments. For instance, Puri et al. (2012) proposed an SVM-based approach using structural features, achieving competitive accuracy on small datasets. However, these methods struggled with the variability and complexity of handwritten digits, particularly in the context of Devanagari script, which consists of a large set of similar-looking characters. The limitations of handcrafted features led to the adoption of deep learning techniques, which can automatically learn discriminative features from raw pixel data.
+
+    In recent years, Convolutional Neural Networks (CNNs) have become the backbone for most modern handwritten digit recognition tasks. The use of CNNs for Devanagari digit recognition has been particularly successful. For example, Kumar et al. (2017) demonstrated that a simple CNN architecture outperformed traditional machine learning models in terms of both accuracy and robustness, providing a significant improvement over earlier methods. Their work highlighted the ability of CNNs to learn hierarchical features from the input data, which proved essential for dealing with the complexity of Devanagari digits. To further improve recognition accuracy, recent works have also incorporated data augmentation and transfer learning techniques. By leveraging pre-trained models on larger datasets, researchers have been able to achieve superior performance with smaller annotated datasets, making the models more robust to variations in handwriting styles.
+    
+    In addition to CNNs, more advanced architectures, such as deep autoencoders and Variational Autoencoders (VAEs), have been explored for Devanagari digit recognition. These models, which learn compressed representations of data in a latent space, help improve generalization and noise tolerance. For instance, Nannapaneni et al. (2020) used a VAE to model Devanagari digits, enabling better handling of noisy and incomplete handwriting. The VAE’s probabilistic nature allows for more flexible representations, which is particularly valuable when dealing with the inherent variability in handwritten scripts. Furthermore, some researchers have integrated fuzzy logic into deep learning models to improve interpretability.
+
+\section{Dataset and Features}
+
+    \subsection{Description of Dataset}
+    The Devanagari Handwritten Digit Dataset (DHCD) ~\cite{devanagari} was created by Shailesh Acharya and Prashnna Kumar Gyawali and is available through the UCI Machine Learning Repository. A key feature of a robust dataset is its diversity, which helps improve the accuracy of machine learning models. Large datasets are preferred for this reason, as they offer a wide range of variations. The DHCD dataset was created by extracting and manually annotating various handwritten samples in the Devanagari script.
+
+    For our paper, we focus on handwritten Devanagari digits, a subset of the larger Devanagari Handwritten Character Dataset (DHCD). It includes 10 classes of digits, with 2,000 examples per digit, totaling 20,000 handwritten digit samples. The training set comprises 85 per cent of the data and the testing set consists of 15 per cent. Each image is 32 x 32 pixels, with the actual handwritten digit centered in a 28 x 28 pixel area, surrounded by a padding of 2 pixels on all sides. This ensures that the model can focus on the core part of the digit, while still learning from the surrounding context. The dataset is designed to aid in the development of machine learning models for accurate handwritten Devanagari digit recognition.
+
+    
+    \subsection{Modifications}
+   In the original Devanagari Handwritten Character Dataset (DHCD), the images were meticulously organized into separate folders, each corresponding to a specific class—for digits there were ten folders (digit\_0, digit\_1,....digit\_9). This structure allowed for easy access and identification of each class, where the images of digits were grouped in their respective folders. However, to facilitate the training process, the dataset was restructured and the images were merged into a single large pool, where labels were assigned based on the class of each image. In addition to this restructuring, we ensured that the modified dataset preserved the original 85-15 split.
+
+    
+\section{Methodology}
+    The architecture consists of an encoder-decoder structure, where the encoder utilizes four convolutional layers with LeakyReLU activations and a dropout operation to regularize the learning process. The encoder maps the input images into a lower-dimensional latent space, while the latent space incorporates fuzzy membership functions, associating each latent feature with three fuzzy sets: "poor," "average," and "good". The decoder reconstructs the input images using deconvolutional layers and a fuzzy logic layer containing nodes for fuzzy intersections and unions, further enhancing interpretability through fuzzy rules. The model also employs a game-theoretical framework for optimizing the latent space, fostering better interaction between agents and improving adversarial learning dynamics. ~\cite{zhang}
+    To evaluate the effectiveness of the fuzzy-enhanced VAE architecture, three baseline models were developed for comparison:
+    
+    Convolutional Neural Network (CNN): A CNN model was designed as a simple baseline, consisting of convolutional layers followed by fully connected layers to classify the input images. 
+    
+    Fuzzy-CNN: The second baseline model incorporated fuzzy logic into the CNN framework. Similar to the fuzzy-enhanced VAE, this model applied fuzzy membership functions to each feature of the CNN's intermediate representations. This addition of fuzzy layers aimed to enhance the model's interpretability by associating learned features with fuzzy sets, allowing for more transparent decision-making.
+    
+    Variational Autoencoder (VAE): The VAE model, which forms the core of the fuzzy-enhanced approach, was built to model the distribution of input data in a lower-dimensional latent space. The VAE employs a probabilistic approach, where the encoder maps the input image into a distribution (mean and variance), and the decoder reconstructs the image from a sample drawn from this distribution. The model was trained to minimize a loss function combining reconstruction loss and Kullback-Leibler (KL) divergence. This baseline provided a comparison point for the fuzzy-enhanced VAE by evaluating its ability to capture probabilistic latent representations of the data.
+
+    All four models (CNN, Fuzzy-CNN, VAE, and Fuzzy-VAE) were deployed on the Qualcomm AI Developer Kit (QIDK) for inference. The QIDK provides hardware acceleration through its powerful Snapdragon processor, enabling faster model inference and optimized performance for edge computing applications. 
+
+    \subsection{Encoder}
+    The encoder \( M_\phi \) in the context of Devanagari handwritten digit recognition takes a high-dimensional image \( x \) as input and encodes it into a \( K \)-dimensional latent space through several convolutional layers. This latent space is modeled as a multivariate Gaussian distribution, as shown in the following equation:
+
+\[
+q_\phi(z|x) = \mathcal{N}(F_{\mu_\phi}(x), F_{\sigma_\phi}(x)^2 I) = \mathcal{N}(\mu, \sigma^2 I) = \mathcal{N}\left(\begin{pmatrix} \mu_r \\ \mu_c \end{pmatrix}, \begin{pmatrix} \sigma_r^2 I & 0 \\ 0 & \sigma_c^2 I \end{pmatrix}\right)
+\]
+
+Here, \( q_\phi(z|x) \) denotes the posterior distribution of the latent variable \( z \), where \( N(\mu, \Sigma) \) represents a Gaussian distribution with mean \( \mu \) and covariance matrix \( \Sigma \). The functions \( F_{\mu_\phi}(x) \) and \( F_{\sigma_\phi}(x) \) represent the non-linear functions that compute the mean and standard deviation of the distribution, respectively. \( \mu \) and \( \sigma \) are the \( K \)-dimensional mean and standard deviation vectors, and \( I \) is the identity matrix. From the multivariate Gaussian distribution, a \( K \)-dimensional latent vector \( z \) is sampled, consisting of two components: \( z_r \) and \( z_c \), corresponding to \( K_r \) and \( K_c \) dimensions, respectively. These components are sampled as follows: \( z_r \) is sampled from \( \mathcal{N}(\mu_r, \sigma_r^2 I) \), and \( z_c \) is sampled from \( \mathcal{N}(\mu_c, \sigma_c^2 I) \). In the context of Devanagari handwritten digit recognition, \( z_r \) captures the representation of lower-level features of the input image, such as basic strokes, edges, or patterns, while \( z_c \) contains more abstract features crucial for classification, such as distinctive characteristics that differentiate one digit from another (e.g., loops, line intersections, etc.). The latent variable \( z \), composed of \( z_r \) and \( z_c \), is then used in the decoder for image reconstruction, with \( z_c \) playing a key role in the classification task, helping to distinguish between different Devanagari digits based on the learned features.
+
+    \subsection{Decoder}
+        The model described is a combination of a decoder for image reconstruction and a classifier for digit recognition. The decoder takes a latent variable and reconstructs the original input image through deconvolution layers, using a Gaussian distribution for the reconstruction process. In the classification phase, the encoder outputs latent variables that are used as features for classification. The FNNC (Fuzzy Neural Network Classifier), which combines fuzzy logic and neural networks, classifies the digits by converting features into linguistic variables and applying fuzzy rules for reasoning. This approach blends deep learning with fuzzy logic for improved interpretability and classification accuracy.
+
+    \subsubsection{Reconstruction}
+   The decoder takes a K-dimensional latent variable \( z \) as input and reconstructs the original image \( x \) via multiple deconvolution layers. The distribution of the output is modeled as a Gaussian distribution, \( p_{\phi}(x \mid z) \), with parameters \( F_{\mu} \) and \( F_{\sigma} \) representing the expected value and standard deviation, respectively. The latent variable \( z \) is assumed to be sampled from a prior distribution \( p(z \mid c) = N(0, I) \), implying that the latent space follows a normal distribution. This decoder's function is similar to techniques in brain imaging research, where latent variables like fMRI signals are used to reconstruct visual stimuli.
+
+   \subsubsection{Classification}
+   In the classification phase, the encoder outputs two latent variables, \( z_r \) and \( z_c \), corresponding to different dimensions. The latent variable \( z_c \) is used as the feature representation for classification, which is fed into the FNNC classifier.  This classifier uses a combination of fuzzy logic and neural networks. Inspired by the reasoning processes in the brain, it translates features into linguistic variables using fuzzy sets. The FNNC structure consists of three main layers: a fuzzification layer, fuzzy logic layers, and a classification layer. Each fuzzy logic layer uses fuzzy intersection and union operations to simulate reasoning with rules, while the classification layer performs the final decision by maximizing the output of the nodes. The classification layer integrates outputs from the fuzzy logic layers, and the final class is determined by the \( \text{argmax} \) function, which selects the class with the highest score.
+
+    \subsubsection{Fuzzification and Fuzzy Logic}
+    The fuzzification layer converts each latent feature \( z_c \) into linguistic variables using Gaussian membership functions, providing semantic interpretability. The fuzzy logic layers apply discrete fuzzy rules for reasoning. The operations are implemented using a Min (fuzzy intersection) and Max (fuzzy union) approach.
+
+     \begin{figure}[h!]
+    \centering
+    \begin{lstlisting}[language=Python]
+
+def fuzzy_membership(x, a, b, c):
+    #where a, b, c are the lower, middle, and upper bounds.
+    if x <= a:
+        return 0
+    elif a < x <= b:
+        return (x - a) / (b - a)
+    elif b < x <= c:
+        return (c - x) / (c - b)
+    else:
+        return 0
+        
+def fuzzy_layer(x):
+    fuzzy_sets = []
+    for feature in x:
+        poor = fuzzy_membership(feature, 0, 0.3, 0.6)
+        average = fuzzy_membership(feature, 0.3, 0.6, 0.9)
+        good = fuzzy_membership(feature, 0.6, 0.9, 1.0)
+        fuzzy_sets.append(torch.tensor([poor, average, good], device=device))
+    return torch.stack(fuzzy_sets, dim=1)
+ \end{lstlisting}
+        \caption{Implementation of Fuzzy Layer}
+        \label{Code 3.}
+    \end{figure}
+    
+
+\subsection{Embedding Algorithms for Feature Representation}
+
+The choice of an embedding algorithm is crucial for representing Devanagari digits in a lower-dimensional space while preserving essential features for classification. Different embedding techniques offer various trade-offs between computational complexity, interpretability, and feature preservation. We analyze several embedding approaches and their suitability for our Fuzzy-VAE architecture \cite{kingma}.
+
+\begin{table*}[t]
+\centering
+\renewcommand{\arraystretch}{1.5}
+\setlength{\tabcolsep}{12pt}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{|l|c|c|c|c|c|c|l|}
+\hline
+\textbf{Embedding Technique} & \textbf{Dimensionality Reduction} & \textbf{Computational Complexity} & \textbf{Feature Preservation} & \textbf{Interpretability} & \textbf{Memory Requirements} & \textbf{Online Learning} & \textbf{Best Use Case} \\
+\hline
+PCA & Linear & $O(d^2n)$ & Global structure & High & Low & No & Linear relationships \cite{jolliffe2016principal} \\
+t-SNE & Non-linear & $O(n^2\log n)$ & Local structure & Medium & High & No & Complex pattern visualization \cite{vanDerMaaten2008} \\
+UMAP & Non-linear & $O(n\log n)$ & Both local and global & Medium & Medium & Yes & Balanced structure preservation \\
+Word2Vec & Linear & $O(n)$ & Semantic relationships & Medium & Medium & Yes & Sequential patterns \cite{mikolov2013efficient} \\
+FastText & Linear & $O(n)$ & Subword information & High & Medium & Yes & Character-level features \\
+Autoencoder & Non-linear & $O(n)$ & Task-dependent & Low & High & Yes & Non-linear patterns \\
+\textbf{VAE (Our Choice)} & Non-linear & $O(n)$ & Probabilistic & Medium & High & Yes & Uncertainty modeling \\
+\hline
+\end{tabular}}
+\caption{Comparison of Embedding Techniques for Devanagari Digit Recognition}
+\label{tab:embedding_comparison}
+\end{table*}
+
+\subsubsection{Selection Criteria for VAE Embedding}
+
+We selected the Variational Autoencoder (VAE)-based embedding for our Fuzzy-VAE architecture based on the following characteristics:
+
+\begin{itemize}
+\item \textbf{Uncertainty Modeling}: VAEs naturally model uncertainty in the latent space, aligning with fuzzy logic principles \cite{kingma}.
+\item \textbf{Non-linear Feature Extraction}: VAEs effectively capture the complex structural patterns present in Devanagari digit strokes.
+\item \textbf{Probabilistic Framework}: The probabilistic approach of VAEs complements fuzzy membership functions, enabling robust uncertainty quantification.
+\item \textbf{Generative Capabilities}: VAEs support both data augmentation and model interpretability through their ability to generate synthetic samples \cite{higgins2017beta}.
+\end{itemize}
+
+\subsubsection{Integration with Fuzzy Logic}
+
+The VAE embedding integrates with fuzzy logic through three key mechanisms:
+
+\begin{itemize}
+\item \textbf{Latent Space Fuzzification}: The VAE's probabilistic latent space maps naturally to fuzzy membership functions \cite{zadeh}.
+\item \textbf{Uncertainty Propagation}: Uncertainties captured in the latent space propagate systematically through the fuzzy decision-making process.
+\item \textbf{Feature Interpretability}: The combination of VAE embeddings with fuzzy rules produces interpretable feature representations that maintain semantic meaning.
+\end{itemize}
+
+\subsubsection{Mathematical Formulation}
+
+The VAE models the latent space probabilistically by encoding input data $x$ into a latent distribution $q_\phi(z|x)$. The reparameterization trick ensures differentiable sampling and smooth gradient flow \cite{kingma}:
+
+\begin{equation}
+z = \mu + \sigma \odot \epsilon, \quad \epsilon \sim \mathcal{N}(0, I)
+\end{equation}
+
+where $\mu$ and $\sigma$ represent the mean and standard deviation vectors of the latent distribution, respectively, and $\odot$ denotes element-wise multiplication.
+
+The VAE's objective function combines a reconstruction loss with a Kullback-Leibler (KL) divergence term:
+
+\begin{equation}
+\mathcal{L}(\theta, \phi) = \mathbb{E}_{q_\phi(z|x)} \left[ \log p_\theta(x|z) \right] - \beta D_{KL} \left( q_\phi(z|x) \| p(z) \right)
+\end{equation}
+
+where:
+\begin{itemize}
+\item $p(z)$ is the prior distribution (typically standard normal)
+\item $\beta$ is a hyperparameter controlling the trade-off between reconstruction and regularization
+\item $p_\theta(x|z)$ is the decoder distribution
+\end{itemize}
+
+This formulation provides:
+\begin{itemize}
+\item Efficient dimensionality reduction while preserving relevant features \cite{bengio2013representation}
+\item Stable gradient-based optimization through the reparameterization trick
+\item Controlled balance between reconstruction fidelity and latent space regularization
+\end{itemize}
+
+
+
+
+
+
+\section{Training Strategy}
+ For the Handwritten Devanagari Characters Recognition task, a comprehensive training strategy was implemented to enhance model performance and robustness. The model underwent adversarial training, where adversarial examples were generated to challenge its resilience. This adversarial training process resulted in multiple model states: the model before adversarial fine-tuning) and the model fine-tuned to improve resilience against adversarial attacks. These models were then exported to the ONNX format for edge deployment, ensuring compatibility with the Qualcomm Snapdragon Neural Processing Engine (SNPE). The exported models include the baseline models, the model prior to adversarial optimization, and final model after adversarial optimization and fixes. This training strategy ensures that the model is both accurate and robust, ready for deployment in real-world scenarios while maintaining transparency in decision-making through fuzzy rule-based classification.
+
+ \subsection{Adversarial Game}
+ 
+\subsubsection{Initialization of the Game}
+The game starts by iterating over all combinations of positive and negative class pairs (\texttt{pos} and \texttt{neg}). Each combination represents a unique pair of classes, and the training process is initialized only when \texttt{pos} is not equal to \texttt{neg}, and when \texttt{neg} is greater than or equal to \texttt{pos}. For each valid pair, several variables are initialized to track the progress of the game, including the \texttt{error\_manipulated}, \texttt{error\_secured}, \texttt{payoff\_curr}, and \texttt{error\_curr}. These variables will be used to monitor the error rates and calculate the current payoffs during the game. Additionally, model-specific parameters such as \texttt{mu\_pos}, \texttt{std\_pos}, \texttt{deltawmean}, and \texttt{deltawstddev} are also set up for each class pair combination.
+
+The adversarial game proceeds with a loop that continues until the model achieves an acceptable level of performance or the error exceeds a predefined threshold (\texttt{maxerror\_game}). During this loop, the adversarial examples are manipulated, and the model's parameters are updated iteratively based on game-theoretical dynamics.
+
+\subsubsection{Adversarial Manipulation of Data}
+In each iteration of the game, the adversarial examples are generated using the \texttt{adversarial\_manipulation} function. This function takes the current model parameters, as well as the input data and class statistics, to create adversarial examples that challenge the model. These manipulated inputs are designed to maximize the model's error, thereby forcing the model to adapt and become more resilient to such perturbations.
+
+Once the adversarial data is generated, it is combined with the corresponding target labels to form a dataset. This dataset is then converted into a PyTorch \texttt{TensorDataset}, which is subsequently loaded into a DataLoader for mini-batch processing. The training process is carried out using this combined adversarial dataset, which forces the model to continuously adjust its parameters to reduce errors when presented with adversarial examples.
+
+\subsubsection{Payoff Calculation}
+At each iteration, the model is evaluated using the adversarial data to determine its performance. The error is calculated by testing the model on the adversarial examples, and this error is subtracted from a cost term (\texttt{cost\_l}) to compute the current payoff (\texttt{payoff\_curr}). The cost term is related to the model's weight deviations, penalizing large changes in the weights. This encourages stability in the model's parameters while allowing for error minimization.
+
+The payoff function captures the trade-off between the model's performance (error) and the cost of deviating from the optimal weight configuration. A higher payoff indicates that the model is performing well, while a lower payoff suggests that further adjustments are needed. The current payoff, along with the calculated error, will guide the optimization of the model in subsequent steps.
+
+\subsubsection{Alternating Least Squares Optimization}
+Once the current error and payoff have been calculated, the optimization process begins. The \texttt{alternating\_least\_squares} function is employed to update the model's weights. This function leverages the current payoff and error values to adjust the model's weights (\texttt{weightwmean} and \texttt{weightwstddev}) through an alternating optimization process.
+
+The goal of this optimization is to improve the model's robustness by updating the weights in such a way that the model becomes better at handling adversarial examples. After the weight update, the adversarial examples are regenerated using the optimized weights. This updated set of adversarial data is then used in the next iteration of training to further refine the model's parameters.
+
+\subsubsection{Updated Adversarial Data Generation}
+After the model's weights are updated, a new set of adversarial data is generated based on the new weight configuration. The \texttt{adversarial\_manipulation} function is invoked again, this time using the optimized weights (\texttt{weightwmean\_best} and \texttt{weightwstddev\_best}). The new adversarial data is then used to test the model's performance once again.
+
+The updated adversarial data is combined with the corresponding target labels and placed into a new \texttt{TensorDataset}, which is loaded into a DataLoader for training. This new dataset reflects the latest adversarial examples, which challenge the model to become even more robust and adaptive.
+
+\subsubsection{Model Training and Fine-Tuning}
+In parallel with the adversarial data manipulation, the model undergoes fine-tuning using both the updated adversarial data and the original training data. A new training loop is initiated, where the model is trained on a combination of adversarial examples and the original dataset. The combined dataset is loaded into a DataLoader, and standard backpropagation is performed to optimize the model's parameters.
+
+The model’s loss is computed using \texttt{CrossEntropyLoss}, which is appropriate for classification tasks. The optimizer is updated after each mini-batch, and the progress is monitored through a progress bar. Training continues for a predefined number of epochs, with the goal of minimizing the loss and improving the model’s generalization capabilities.
+
+\subsubsection{Termination Conditions and Exit Strategy}
+The game loop continues until one of the following conditions is met:
+\begin{itemize}
+    \item The improvement in the payoff becomes negligible (i.e., the difference between the new and old payoffs is small).
+    \item The model’s error exceeds a maximum threshold (\texttt{maxerror\_game}), at which point the game is exited.
+\end{itemize}
+
+During each iteration, if the payoff improves after updating the model and generating new adversarial data, the adversarial data is concatenated with the original training data. This ensures that the model is continuously exposed to adversarial examples, reinforcing its ability to handle perturbations.
+
+If, however, the error becomes too large or the improvements plateau, the game will end, and the final model will be deemed ready for deployment.
+
+\subsubsection{Outcome of the Game}
+The result of the game is a model that has been trained to handle adversarial attacks through continuous interaction between the model and adversarial examples. By optimizing the model's weights and updating the adversarial data iteratively, the model becomes more resilient to perturbations, making it robust in real-world scenarios. The game-theoretical approach allows for a dynamic and adaptive training process that continuously refines the model's parameters while maximizing its performance on adversarial examples.
+
+
+
+
+
+
+
+
+\section{Deep Learning on Edge Devices}
+
+
+
+
+
+
+
+
+Edge devices are increasingly being used for deep learning applications, revolutionizing the way artificial intelligence is deployed and utilized. This shift towards edge computing in AI, often referred to as Edge Intelligence or Edge AI, brings numerous benefits and opens up new possibilities for various industries~\cite{wang2020deep, qu2022enabling}. With advances in mobile processors and AI acceleration frameworks, deploying deep learning models on edge devices has become significantly more efficient.
+
+\subsection{Integration of Deep Learning and Edge Computing}
+Edge devices are now capable of running deep learning models directly at the source of data generation, reducing reliance on cloud-based processing. This integration of AI and edge computing is driven by several factors:
+\begin{itemize}
+    \item The proliferation of mobile and IoT devices generating massive amounts of data at the network edge
+    \item The need for real-time processing and low-latency responses in AI applications
+    \item Increasing concerns about data privacy and security~\cite{zewe2022learning}
+    \item Advancements in edge-specific AI accelerators and specialized processors for efficient deep learning inference
+\end{itemize}
+
+\subsection{Advantages of Deep Learning on Edge Devices}
+Moving deep learning computations from the cloud to edge devices offers several significant advantages:
+
+\subsubsection{Reduced Latency}
+By processing data locally on edge devices, the time required for data transfer to and from the cloud is eliminated. This significantly reduces latency, enabling real-time decision-making and responses~\cite{baller2021deep}.
+
+\subsubsection{Enhanced Privacy and Security}
+Edge AI allows sensitive data to be processed locally, reducing the need to transmit or store personal information in the cloud. This approach enhances data privacy and security, making it particularly valuable for applications handling sensitive information.
+
+\subsubsection{Improved Reliability}
+The decentralized nature of edge computing provides a more reliable infrastructure for deep learning computations. It reduces dependence on cloud connectivity and mitigates the risk of system-wide failures.
+
+\subsubsection{Bandwidth Efficiency}
+Edge devices can process data locally and only send relevant information or results to the cloud, significantly reducing bandwidth usage. This is particularly beneficial in scenarios with limited network connectivity or when dealing with large volumes of data.
+
+\subsubsection{Scalability}
+By distributing computational load across numerous edge devices, deep learning applications can scale more effectively, allowing for wider deployment across various industries~\cite{chen2019deep}.
+
+\subsection{Applications of Deep Learning on Edge Devices}
+Edge AI is being utilized in various domains, leveraging the power of deep learning at the network edge:
+\begin{itemize}
+    \item \textbf{Computer Vision}: Edge devices equipped with cameras can perform real-time image and video analysis for applications such as object detection, facial recognition, and autonomous vehicles
+    \item \textbf{Natural Language Processing}: Smart speakers and mobile devices can process voice commands and perform language translation locally, improving response times and user privacy
+    \item \textbf{Internet of Things (IoT)}: IoT devices can use edge AI for real-time sensor data analysis, predictive maintenance, and anomaly detection in industrial settings
+    \item \textbf{Autonomous Systems}: Self-driving cars and drones can utilize edge AI for real-time decision-making, navigation, and obstacle avoidance
+\end{itemize}
+
+\subsection{Challenges and Solutions}
+While edge AI offers numerous benefits, it also presents challenges:
+
+\subsubsection{Resource Constraints}
+Edge devices often have limited computational power, memory, and energy resources compared to cloud servers. To address this, researchers and developers are working on:
+\begin{itemize}
+    \item \textbf{Model compression techniques} such as quantization and pruning to reduce model size and computational requirements
+    \item \textbf{Hardware acceleration} using specialized AI chips and processors optimized for edge inference~\cite{kim2024efficient}
+    \item \textbf{Efficient deep learning architectures} designed for edge deployment, such as MobileNet and EfficientNet
+\end{itemize}
+
+\subsubsection{Model Adaptation}
+Edge devices may need to adapt to changing environments or user preferences. Techniques such as transfer learning and federated learning are being explored to enable on-device model updates and personalization~\cite{yang2024adaptive}.
+
+\subsubsection{Edge-Cloud Collaboration}
+While edge AI aims to reduce dependence on the cloud, a hybrid approach combining edge and cloud computing can be beneficial for certain applications. This allows complex tasks to be offloaded to the cloud when necessary, while still maintaining the advantages of edge processing for time-sensitive operations.
+
+\subsection{Future Directions}
+The field of edge AI is rapidly evolving, with ongoing research and development focusing on:
+\begin{itemize}
+    \item Improving the efficiency and performance of deep learning models on resource-constrained devices
+    \item Developing new hardware architectures specifically designed for edge AI applications
+    \item Enhancing the security and privacy aspects of edge AI systems
+    \item Creating standardized frameworks and tools for deploying and managing deep learning models on edge devices
+\end{itemize}
+
+With rapid advancements in edge computing technology and hardware capabilities, deep learning on the edge is poised to transform industries by delivering low-latency, privacy-preserving, and highly efficient AI solutions.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\section{Deployment in QIDK Edge Device}
+After training and adversarial optimization, the robust model was deployed onto an edge device using the Qualcomm Snapdragon Neural Processing Engine (SNPE). The goal was to evaluate the model's performance on adversarially perturbed inputs in a resource-constrained environment, demonstrating the feasibility of deploying robust models at the edge.
+
+
+\subsection{Edge Deployment Pipeline}
+\subsubsection{Model Optimization and Conversion}
+The trained PyTorch model underwent a systematic optimization process:
+\begin{itemize}
+\item ONNX Conversion: Model exported to ONNX format using \texttt{torch.onnx.export} with trace-based conversion, ensuring support for dynamic batch sizes and operator compatibility
+\item Quantization: Model weights and activations quantized from FP32 to INT8 using SNPE's quantization tools, with calibration performed on a representative dataset sample to minimize accuracy loss
+\item DLC Generation: Model converted to Qualcomm's DLC format using \texttt{snpe-onnx-to-dlc}, with optimization flags enabled for target hardware
+\item Runtime Optimization: Model graph optimized for Snapdragon's Neural Processing Unit (NPU) with fallback paths configured for GPU and DSP acceleration
+\end{itemize}
+
+\subsubsection{Input Data Processing}  
+The Devanagari character dataset underwent preprocessing to meet SNPE requirements:  
+\begin{itemize}  
+\item \textbf{Spatial Normalization}: Images were resized to 224×224 pixels using bilinear interpolation while maintaining the aspect ratio through zero-padding.  
+\item \textbf{Pixel Normalization}: Pixel values were scaled to the [0,1] range using min-max normalization, followed by conversion to single-precision floating-point format (FP32).  
+\item \textbf{Binary Serialization}: Normalized data was converted to raw binary format using little-endian byte order and the NCHW memory layout (standard for SNPE).  
+\item \textbf{Batch Organization}: The \texttt{input\_list.txt} manifest was created with absolute paths to raw files, batch size parameters, and input tensor specifications.  
+\end{itemize}  
+
+
+
+
+
+\subsection{SNPE Inference}
+The ONNX model was quantized and converted into the SNPE-compatible DLC format. The SNPE runtime was used to perform inference on the test inputs.The model's predictions were written to the \texttt{Output} directory in \texttt{.raw} format for evaluation.
+
+\subsection{Output Evaluation}
+\begin{itemize}
+    \item The raw output files contained reconstructed images and class probabilities, which were post-processed to interpret the model's performance.
+    \item Reconstruction quality and classification accuracy were assessed to ensure the model maintained its robustness and accuracy when deployed on the edge device.
+\end{itemize}
+
+\section{Results}
+We thus optimistically conclude our report with plans for continuing our experiments and exploring the possibilities the field offers for the education sector.
+
+\subsection{Comparitive Analysis}
+The focus of PAL is on learning semantic-invariant features that help the model generalize across different domains. However, these features might not always align perfectly with discriminative features needed for all modes of evaluation.
+Subjective evaluation of the model may lead to human indistinguishability of model performance, or whether it's learning robust, semantic features. This trade-off could influence the subjective evaluation scores depending on how the evaluator perceives the "reliability" of the model’s recognition process.
+
+\begin{table}[h!]
+\centering
+\renewcommand{\arraystretch}{1.5} % Adjusts the row height
+\Large % Makes the text slightly larger
+\resizebox{0.5\textwidth}{!}{%
+\begin{tabular}{|>{\raggedright\arraybackslash}p{3cm}|>{\raggedright\arraybackslash}p{3cm}|>{\raggedright\arraybackslash}p{5cm}|>{\raggedright\arraybackslash}p{3cm}|}
+\hline
+\textbf{Layer} & \textbf{Type} & \textbf{Details} & \textbf{Output Size} \\ \hline
+\hline
+Input Layer & Image & 32x32 grayscale image & 32x32x1 \\ \hline
+Conv Layer 1 & Convolutional & 32 filters, 3x3 kernel, stride 1, padding 'same'; followed by LeakyReLU activation and Dropout (0.1) & 32x32x32 \\ \hline
+Conv Layer 2 & Convolutional & 64 filters, 3x3 kernel, stride 1, padding 'same'; followed by LeakyReLU activation and Dropout (0.1) & 32x32x64 \\ \hline
+Conv Layer 3 & Convolutional & 128 filters, 3x3 kernel, stride 1, padding 'same'; followed by LeakyReLU activation and Dropout (0.1) & 32x32x128 \\ \hline
+Conv Layer 4 & Convolutional & 256 filters, 3x3 kernel, stride 1, padding 'same'; followed by LeakyReLU activation and Dropout (0.1) & 32x32x256 \\ \hline
+Flatten & Flatten & Flatten the output from the final convolutional layer & 1x(32*32*256) \\ \hline
+Latent Space & Fully Connected & Dense layer with 10 and 20 latent variables (as specified for the model) & 10, 20 \\ \hline
+Fuzzy Logic Layer & Fuzzy Layer & 5 fuzzy intersection nodes and 5 fuzzy union nodes, utilizing fuzzy membership functions & 10 (fuzzy features) \\ \hline
+Deconv Layer 1 & Deconvolutional & 128 filters, 3x3 kernel, stride 1, padding 'same'; followed by ReLU activation & 32x32x128 \\ \hline
+Deconv Layer 2 & Deconvolutional & 64 filters, 3x3 kernel, stride 1, padding 'same'; followed by ReLU activation & 32x32x64 \\ \hline
+Deconv Layer 3 & Deconvolutional & 32 filters, 3x3 kernel, stride 1, padding 'same'; followed by ReLU activation & 32x32x32 \\ \hline
+Deconv Layer 4 & Deconvolutional & 1 filter, 3x3 kernel, stride 1, padding 'same'; followed by Sigmoid activation for reconstruction & 32x32x1 \\ \hline
+Output Layer & Image & Final reconstructed image, same size as the input & 32x32x1 \\ \hline
+\end{tabular}
+}
+\caption{Fuzzy-VAE Architecture for Devanagari Digits}
+\end{table}
+
+
+\subsection{Implications and Applications}
+Enhancing PALv2 can improve the scalability of the model, making it suitable for large-scale deployment in various environments. We aim to improved the model to handle a larger volume of handwritten mathematical to improve generalization. Improved PALv2 could help mitigate biases associated with recognizing diverse handwriting styles. By improving how the model handles different handwriting sources, the model can become more inclusive, reducing bias toward particular handwriting styles or individuals.
+Eventually, the model can be deployed in real-world applications where handwritten mathematical content is prevalent, such as in scanned documents, academic papers, or even digitizing handwritten notes. 
+
+\subsection{Future Work}
+The particular focus on subjective evaluation is to explore future possibility of feeding in ground truth as \LaTeX\ expression for an entire solution rather than the mathematical expression. This could be done in a successive stage after the solution is broken up into different expressions as well. 
+However, we still need to improve upon the original training strategy and conduct testing experiments. We will then follow with ablation experiments and attention visualization, and further hyperparameter tuning since the effect of $\lambda$ is profound in the loss function. We plan to include an online testing portal with an option to see process of attention visualization, similar to H.Wang's approach ~\cite{hwang}. 
+
+\section{Conclusion}
+We thus optimistically conclude our report with plans for continuing our experiments and exploring the possibilities the field offers for the education sector.
+
+\subsection{Limitations}
+The focus of PAL is on learning semantic-invariant features that help the model generalize across different domains. However, these features might not always align perfectly with discriminative features needed for all modes of evaluation.
+Subjective evaluation of the model may lead to human indistinguishability of model performance, or whether it's learning robust, semantic features. This trade-off could influence the subjective evaluation scores depending on how the evaluator perceives the "reliability" of the model’s recognition process.
+
+\subsection{Implications and Applications}
+Enhancing PALv2 can improve the scalability of the model, making it suitable for large-scale deployment in various environments. We aim to improved the model to handle a larger volume of handwritten mathematical to improve generalization. Improved PALv2 could help mitigate biases associated with recognizing diverse handwriting styles. By improving how the model handles different handwriting sources, the model can become more inclusive, reducing bias toward particular handwriting styles or individuals.
+Eventually, the model can be deployed in real-world applications where handwritten mathematical content is prevalent, such as in scanned documents, academic papers, or even digitizing handwritten notes. 
+
+\subsection{Future Work}
+The particular focus on subjective evaluation is to explore the future possibility of feeding in ground truth as \LaTeX\ expression for an entire solution rather than the mathematical expression. This could be done in a successive stage after the solution is broken up into different expressions as well. 
+However, we still need to improve upon the original training strategy and conduct testing experiments. We will then follow with ablation experiments and attention visualization, and further hyperparameter tuning since the effect of $\lambda$ is profound in the loss function. We plan to include an online testing portal with an option to see the process of attention visualization, similar to H.Wang's approach ~\cite{hwang}. 
+%----------------------------------------------------------
+
+\printbibliography
+
+%----------------------------------------------------------
+\end{document}
